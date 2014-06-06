@@ -18,23 +18,37 @@
  ***************/
 
 // Initialize a new WiGPS object
-WiGPS gps(7);
+#define GPS_EN_PIN 7
+WiGPS gps(GPS_EN_PIN);
 int updateTimes = 8;
 int i = 0;
 
 void setup() {
   
-  gps.init(7);
+  pinMODE(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+  
+  gps.init(GPS_EN_PIN);
   // You will inspect values trough the Serial Port
   Serial.begin(9600);
+  
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
   
   // The GPS will start looking for satellites
   gps.on();
   delay(3000);
   Serial.println("Please wait...");
   
-  
-  
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
   
   // Turn off the GPS to save battery without loosing RTC data
   //gps.off();
@@ -42,23 +56,26 @@ void setup() {
 
 void loop() {
   
-  // Loop forever here
-  if(i <= updateTimes){
-    i++;
-      gps.update();
-       
-      // After data have been retrieved you'll get them
-      Serial.print("Time: ");
-      Serial.println(gps.time());
-      Serial.print("Date: ");
-      Serial.println(gps.date());
-      Serial.print("Latitude: ");
-      Serial.println(gps.latitude());
-      Serial.print("Longitude: ");
-      Serial.println(gps.longitude());
-      Serial.print("Speed: ");
-      Serial.println(gps.speed());
-      Serial.print("Course: ");
-      Serial.println(gps.course());
-  }
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(500);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(500);
+  
+  gps.update();
+   
+  // After data have been retrieved you'll get them
+  Serial.print("Time: ");
+  Serial.println(gps.time());
+  Serial.print("Date: ");
+  Serial.println(gps.date());
+  Serial.print("Latitude: ");
+  Serial.println(gps.latitude());
+  Serial.print("Longitude: ");
+  Serial.println(gps.longitude());
+  Serial.print("Speed: ");
+  Serial.println(gps.speed());
+  Serial.print("Course: ");
+  Serial.println(gps.course());
+
+  delay(3000);
 }
