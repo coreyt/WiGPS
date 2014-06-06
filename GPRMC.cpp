@@ -17,9 +17,10 @@
  along with "WiGPS Arduino Library". If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "GPRMC.h"
-#include "application.h"
-//#include "arduino.h"
+#include <GPRMC.h>
+//#include "application.h"
+#include <Arduino.h>
+#include <WString.h>
 
 
 GPRMC::GPRMC(char* gprmc) : String(gprmc){
