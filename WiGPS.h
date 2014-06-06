@@ -19,11 +19,11 @@
 
 #ifndef _WIGPS_H
 #define _WIGPS_H
-#include "application.h" //needs to be placed in extra classes
-//#include <arduino.h>
+//#include "application.h" //needs to be placed in extra classes
+#include <Arduino.h>
 //#include <SoftwareSerial.h>
 
-#include "GPRMC.h"
+#include <GPRMC.h>
 
 /*****************
  * Data constants
