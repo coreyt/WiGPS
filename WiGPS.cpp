@@ -16,8 +16,8 @@
  You should have received a copy of the GNU General Public License
  along with "WiGPS Arduino Library". If not, see <http://www.gnu.org/licenses/>.
  */
-#include "application.h"
-#include "WiGPS.h"
+//#include "application.h"
+#include <WiGPS.h>
 
 void WiGPS::parseGPRMC(GPRMC* str){
     /*
