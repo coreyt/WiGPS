@@ -16,12 +16,13 @@
  You should have received a copy of the GNU General Public License
  along with "WiGPS Arduino Library". If not, see <http://www.gnu.org/licenses/>.
  */
-#include "application.h"
+//#include "application.h"
 
 #ifndef _GPRMC_H
 #define _GPRMC_H
 
-//#include <arduino.h>
+#include <Arduino.h>
+#include <WString.h>
 
 #define COMMAS_NUMBER 12
 
