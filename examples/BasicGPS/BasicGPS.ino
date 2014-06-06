@@ -1,10 +1,9 @@
-#include "application.h"
+//#include "application.h"
 // This #include statement was automatically added by the Spark IDE.
-#include "WiGPS.h"
+#include <WiGPS.h>
 
 // This #include statement was automatically added by the Spark IDE.
-#include "GPRMC.h"
-
+#include <GPRMC.h>
 
 /***************
  * WiGPS Arduino Library, BasicGPS example.
@@ -20,46 +19,23 @@
 // Initialize a new WiGPS object
 #define GPS_EN_PIN 7
 WiGPS gps(GPS_EN_PIN);
-int updateTimes = 8;
-int i = 0;
 
 void setup() {
-  
-  pinMODE(LED_BUILTIN, OUTPUT);
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
   
   gps.init(GPS_EN_PIN);
   // You will inspect values trough the Serial Port
   Serial.begin(9600);
-  
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
   
   // The GPS will start looking for satellites
   gps.on();
   delay(3000);
   Serial.println("Please wait...");
   
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
-  
   // Turn off the GPS to save battery without loosing RTC data
   //gps.off();
 }
 
 void loop() {
-  
-  digitalWrite(LED_BUILTIN, HIGH);
-  delay(500);
-  digitalWrite(LED_BUILTIN, LOW);
-  delay(500);
   
   gps.update();
    
