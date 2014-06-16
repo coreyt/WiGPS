@@ -18,7 +18,7 @@
  * Power ON/OFF to pin 22
  ***************/
 #include <WiGPS.h>
-WiGPS gps(22);
+WiGPS gps(Serial1);
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -45,7 +45,7 @@ void loop() {
   // newline between updates
   Serial.print("\n");
 
-  gps.update();
+  gps.update(3); // attempt update for 3 seconds
 
   if (gps.isReady() == true) {
     // print all data
