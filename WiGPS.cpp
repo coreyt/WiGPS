@@ -30,6 +30,7 @@
  *                Formatted to YYYY-MM-DD HH:mm:ss
  *                Added seconds as float for more precision
  *                Update loop exits on timeout
+ *                Serial selection in constructor
  */
 
 #include "WiGPS.h"
@@ -78,11 +79,12 @@ void WiGPS::parseGPRMC(GPRMC* str){
  ******************/
 
 
-WiGPS::WiGPS(int pw){
+WiGPS::WiGPS(HardwareSerial& serial) : _serial(serial) {
     //Serial.println("GPS class initialization.");
 
+
     // init all variables
-    powerPort = pw;
+    powerPort = 0;
     powerState = LOW;
 
     hours = 0;
@@ -116,7 +118,7 @@ void WiGPS::init(int pw) {
 
     dataReady = false;
 
-    Serial1.begin(9600);
+    _serial.begin(9600);
 
     powerPort = pw;
     pinMode(powerPort, OUTPUT);
@@ -135,7 +137,7 @@ int WiGPS::on(void){
 
     int counter = 0;
     digitalWrite(powerPort, HIGH);
-    while(!Serial1.available()){
+    while(!_serial.available()){
         if(counter++ < 3){
             delay(1000);
         }else{
@@ -158,7 +160,7 @@ int WiGPS::off(void){
 
     int counter = 0;
     digitalWrite(powerPort, LOW);
-    while(Serial1.available()){
+    while(_serial.available()){
         if(counter++ < 3){
             delay(1000);
         }else{
@@ -177,7 +179,7 @@ bool WiGPS::update(int timeout_sec){
      * The main function for fetching data
      * from the GPS module.
      * This function gets incoming Strings
-     * from the serial port and store them
+     * from the _serial port and store them
      * in a buffer if they starts with the $ char
      * After retrieving a "valid" String the
      * parser is called.
@@ -202,12 +204,12 @@ bool WiGPS::update(int timeout_sec){
     //Serial.println(updateTimeout);
     while(!dataReady){
         // Wait for the first incoming header
-        while(Serial1.read() != '$');
+        while(_serial.read() != '$');
         // Store the first 5 chars
         for(int i = 0; i<5; i++){
-            while(!Serial1.available());
+            while(!_serial.available());
 
-            *(buf++) = Serial1.read();
+            *(buf++) = _serial.read();
         }
         //Serial.print("buffer:" );
         //Serial.print(buffer);
@@ -215,8 +217,8 @@ bool WiGPS::update(int timeout_sec){
             // This is the right String, go on
             do {
                 // Fetch the rest of the GPRMC String
-                while(!Serial1.available());
-                *buf = Serial1.read();
+                while(!_serial.available());
+                *buf = _serial.read();
             } while(*(buf++) != '\n');
 
             GPRMC str(buffer);
