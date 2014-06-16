@@ -28,6 +28,8 @@
  *                Fixed latitude and longitude seconds
  *                Added get functions
  *                Formatted to YYYY-MM-DD HH:mm:ss
+ *                Added seconds as float for more precision
+ *                Update loop exits on timeout
  */
 
 #include "WiGPS.h"
@@ -37,6 +39,7 @@ void WiGPS::parseGPRMC(GPRMC* str){
      * Save all data from the GPRMC string
      * in a numeric format in memory.
      */
+    //Serial.println("GPS GPRMC parsing.");
 
     hours = str->UTCtime().substring(0,2).toInt();
     minutes = str->UTCtime().substring(2,4).toInt();
@@ -48,12 +51,14 @@ void WiGPS::parseGPRMC(GPRMC* str){
 
     latitudeDeg = str->latitudeDeg().substring(0,2).toInt();
     latitudeMin = str->latitudeDeg().substring(2,4).toInt();
-    latitudeSec = (int) round(str->latitudeDeg().substring(5,6).toInt() * CONV_TO_SEC); // convert from .mm to sec
+    latitudeSecf = (float) str->latitudeDeg().substring(5,10).toInt() * CONV_TO_SEC; // convert from .mm to sec
+    latitudeSec = (int) round(latitudeSecf);
     latitudeRef = str->latitudeRef().charAt(0);
 
     longitudeDeg = str->longitudeDeg().substring(0,3).toInt();
     longitudeMin = str->longitudeDeg().substring(3,5).toInt();
-    longitudeSec = (int) round(str->longitudeDeg().substring(6,7).toInt() * CONV_TO_SEC); // convert from .mm to sec
+    longitudeSecf = (float) str->longitudeDeg().substring(6,11).toInt() * CONV_TO_SEC; // convert from .mm to sec
+    longitudeSec = (int) round(longitudeSecf);
     longitudeRef = str->longitudeRef().charAt(0);
 
     String speedString(str->speed());
@@ -74,10 +79,11 @@ void WiGPS::parseGPRMC(GPRMC* str){
 
 
 WiGPS::WiGPS(int pw){
+    //Serial.println("GPS class initialization.");
 
-	// init all variables
-    powerPort = 0;
-    powerState = 0;
+    // init all variables
+    powerPort = pw;
+    powerState = LOW;
 
     hours = 0;
     minutes = 0;
@@ -100,19 +106,20 @@ WiGPS::WiGPS(int pw){
     Speed = 0;
     Course = 0;
 
-	dataReady = FALSE;
+    dataReady = false;
 
     return;
 }
 
 void WiGPS::init(int pw) {
+    //Serial.println("GPS initialization.");
 
-    dataReady = FALSE;
+    dataReady = false;
 
     Serial1.begin(9600);
 
     powerPort = pw;
-    pinMode(pw, OUTPUT);
+    pinMode(powerPort, OUTPUT);
     digitalWrite(powerPort, LOW);
 
     return;
@@ -124,6 +131,7 @@ int WiGPS::on(void){
      * starts watching for satellites
      * to retrieve data from them
      */
+    //Serial.println("GPS on.");
 
     int counter = 0;
     digitalWrite(powerPort, HIGH);
@@ -146,6 +154,7 @@ int WiGPS::off(void){
      * and RAM memory data for future
      * exploring.
      */
+    //Serial.println("GPS off.");
 
     int counter = 0;
     digitalWrite(powerPort, LOW);
@@ -159,8 +168,11 @@ int WiGPS::off(void){
     return 0;
 }
 
-
 bool WiGPS::update(void){
+    return update(DEFAULT_UPDATE_TIMEOUT);
+}
+
+bool WiGPS::update(int timeout_sec){
     /*
      * The main function for fetching data
      * from the GPS module.
@@ -170,12 +182,13 @@ bool WiGPS::update(void){
      * After retrieving a "valid" String the
      * parser is called.
      */
+    //Serial.println("GPS update.");
 
     char buffer[BUFFER_LENGTH_2];
     char *buf = buffer;
-    int dataReady = FALSE;
+    dataReady = false;
     //int failed5 = 0;
-	int updateTimeout = millis() + UPDATE_TIMEOUT;
+    unsigned long updateTimeout = millis() + timeout_sec*1000;
 
 
     while(buf - buffer < BUFFER_LENGTH_2){
@@ -183,6 +196,10 @@ bool WiGPS::update(void){
     }
     buf = buffer;
 
+    //Serial.print("GPS begin loop: ");
+    //Serial.print(updateTimeout - timeout_sec*1000);
+    //Serial.print(" < ");
+    //Serial.println(updateTimeout);
     while(!dataReady){
         // Wait for the first incoming header
         while(Serial1.read() != '$');
@@ -192,7 +209,7 @@ bool WiGPS::update(void){
 
             *(buf++) = Serial1.read();
         }
-        //Serial.println("buffer:");
+        //Serial.print("buffer:" );
         //Serial.print(buffer);
         if(strncmp(buffer, PROTOCOL, 5) == 0){
             // This is the right String, go on
@@ -205,21 +222,24 @@ bool WiGPS::update(void){
             GPRMC str(buffer);
             //Serial.println(str);
 
-			// 'A' for valid, 'V' for invalid
+            // 'A' for valid, 'V' for invalid
             if(str.dataValid().equals("A")){
-				//Serial.println("Data is valid.");
+                //Serial.println("GPS data is valid.");
                 // The string is ok, extract data
                 // TODO: ADD CHECKSUM CONTROL TO THE STRING
-                //Serial.println(str);
+                Serial.print(str);
                 parseGPRMC(&str);
 
                 //Now break the cycle
-                dataReady = TRUE;
+                //Serial.println("GPS success.");
+                //Serial.println("GPS break loop.");
+                //Serial.print("\n");
+                dataReady = true;
                 return dataReady;
             } else {
-				//Serial.println("Data is invalid.");
-			}
-        };
+                //Serial.println("GPS data invalid.");
+            }
+        }
         //Serial.println("6- Data is not ready ");
         //Serial.println("------");
         //failed5++;
@@ -229,14 +249,24 @@ bool WiGPS::update(void){
         //}
         //Serial.println("\n");
 
-		// if update timed out
-		if (millis() > updateTimeout) {
-			return FALSE;
-		}
+        // if update timed out
+        //Serial.print("GPS time: ");
+        //Serial.print(millis());
+        //Serial.print(" < ");
+        //Serial.println(updateTimeout);
+        if (millis() >= updateTimeout) {
+            //Serial.println("GPS timeout.");
+            //Serial.println("GPS break loop.");
+            //Serial.print("\n");
+            dataReady = false;
+            return false;
+        }
 
         buf = buffer;
     };
-    return TRUE;
+    //Serial.println("GPS loop end.");
+    //Serial.print("\n");
+    return true;
 }
 
 
@@ -246,6 +276,7 @@ String WiGPS::time(void){
      * last updated data in the memory
      * in the format of the String d
      */
+    //Serial.println("GPS time.");
 
     String h(hours);
     String m(minutes);
@@ -261,10 +292,11 @@ String WiGPS::date(void){
      * last updated data in the memory
      * in the format of the String d
      */
+    //Serial.println("GPS date.");
 
     String d(day);
     String m(month);
-	String y(year);
+    String y(year);
     String f = String('2') + String('0') + y + String('-') + m + String('-') + d;
     return f;
 }
@@ -276,6 +308,7 @@ String WiGPS::latitude(void){
      * last updated data in the memory
      * in the format of the String d
      */
+    //Serial.println("GPS latitude.");
 
     String d(latitudeDeg);
     String m(latitudeMin);
@@ -293,6 +326,7 @@ String WiGPS::longitude(void){
      * last updated data in the memory
      * in the format of the String d
      */
+    //Serial.println("GPS longitude.");
 
     String d(longitudeDeg);
     String m(longitudeMin);
@@ -310,6 +344,7 @@ String WiGPS::speed(void){
      * last updated data in the memory
      * in the format of the String d (m/s)
      */
+    //Serial.println("GPS speed.");
 
     String s(Speed);
     String f = s + String(" m/s");
@@ -323,6 +358,7 @@ String WiGPS::course(void){
      * last updated data in the memory
      * in the format of the String d
      */
+    //Serial.println("GPS course.");
 
     String s(Course);
     char c = DEGREE_CHAR;
@@ -335,60 +371,82 @@ WiGPS::~WiGPS(){
      * This destroys the created
      * SoftwareSerial object.
      */
-
+    //Serial.println("GPS de-initialization.");
     //delete serialPort;
 }
 
 bool WiGPS::isReady(void){
-	return dataReady;
+    //Serial.println("GPS readiness.");
+    return dataReady;
 }
 
 float WiGPS::getLatitude(void){
-	float temp = (float) latitudeDeg;
-	temp += (float) latitudeMin/60;
-	temp += (float) latitudeSec/3600;
-	temp *= latitudeRef == 'N' ? 1.0 : -1.0;
-	return temp;
+    //Serial.println("GPS numerical latitude.");
+
+    float temp = (float) latitudeDeg;
+    temp += (float) latitudeMin/60;
+    temp += latitudeSecf/3600;
+    temp *= latitudeRef == 'N' ? 1.0 : -1.0;
+    return temp;
 }
 
 int WiGPS::getLatitudeDeg(void){
-	return latitudeDeg;
+    //Serial.println("GPS numerical latitude degrees.");
+    return latitudeDeg;
 }
 
 int WiGPS::getLatitudeMin(void){
-	return latitudeMin;
+    //Serial.println("GPS numerical latitude minutes.");
+    return latitudeMin;
 }
 
 int WiGPS::getLatitudeSec(void){
-	return latitudeSec;
+    //Serial.println("GPS numerical latitude seconds.");
+    return latitudeSec;
+}
+
+float WiGPS::getLatitudeSecf(void){
+    //Serial.println("GPS numerical (float) latitude seconds.");
+    return latitudeSecf;
 }
 
 char WiGPS::getLatitudeRef(void){
-	return latitudeRef;
+    //Serial.println("GPS numerical latitude reference.");
+    return latitudeRef;
 }
 
 
 float WiGPS::getLongitude(void){
-	float temp = (float) longitudeDeg;
-	temp += (float) longitudeMin/60;
-	temp += (float) longitudeSec/3600;
-	temp *= longitudeRef == 'N' ? 1.0 : -1.0;
-	return temp;
+    //Serial.println("GPS numerical longitude.");
+
+    float temp = (float) longitudeDeg;
+    temp += (float) longitudeMin/60;
+    temp += longitudeSecf/3600;
+    temp *= longitudeRef == 'N' ? 1.0 : -1.0;
+    return temp;
 }
 
 int WiGPS::getLongitudeDeg(void){
-	return longitudeDeg;
+    //Serial.println("GPS numerical longitude degrees.");
+    return longitudeDeg;
 }
 
 int WiGPS::getLongitudeMin(void){
-	return longitudeMin;
+    //Serial.println("GPS numerical longitude minutes.");
+    return longitudeMin;
 }
 
 int WiGPS::getLongitudeSec(void){
-	return longitudeSec;
+    //Serial.println("GPS numerical longitude seconds.");
+    return longitudeSec;
+}
+
+float WiGPS::getLongitudeSecf(void){
+    //Serial.println("GPS numerical (float) longitude seconds.");
+    return longitudeSecf;
 }
 
 char WiGPS::getLongitudeRef(void){
-	return longitudeRef;
+    //Serial.println("GPS numerical longitude reference.");
+    return longitudeRef;
 }
-
