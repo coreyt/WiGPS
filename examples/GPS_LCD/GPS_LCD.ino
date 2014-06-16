@@ -1,6 +1,6 @@
 /*
  * FILE:    GPS_LCD.ino
- * PURPOSE: GP-635T with LCD output
+ * PURPOSE: Test GP-635T with LCD output
  * AUTHOR:  Geoffrey Card
  *          based on code by Daniele Faugiana
  * DATE:    2014-06-14 -
@@ -18,7 +18,7 @@
  * Power ON/OFF to pin 22
  ***************/
 #include <WiGPS.h>
-WiGPS gps(22);
+WiGPS gps(Serial1);
 
 /*
  * LCD RS pin to digital pin 23
@@ -54,7 +54,7 @@ void loop() {
   digitalWrite(LED_BUILTIN, LOW);
   delay(500);
 
-  gps.update();
+  gps.update(3); // attempt update for 3 seconds
 
   if (gps.isReady() == true) {
     /*
