@@ -30,13 +30,14 @@
  *                Formatted to YYYY-MM-DD HH:mm:ss
  *                Added seconds as float for more precision
  *                Update loop exits on timeout
+ *                Serial selection in constructor
  */
-
 
 #ifndef _WIGPS_H
 #define _WIGPS_H
 
 #include <Arduino.h>
+#include <HardwareSerial.h>
 #include "GPRMC.h"
 
 /*****************
@@ -57,13 +58,6 @@
 #define ON  1
 #define OFF 0
 
-/**************
- * ERROR CODES
- **************/
-
-#define TRUE 1
-#define FALSE 0
-
 /*************
  * TYPEDEFS
  *************/
@@ -78,6 +72,8 @@ private:
     /***************
      * PRIVATE VARS
      ***************/
+
+    HardwareSerial& _serial;
 
     uint powerPort;             // The pin Arduino uses to activate/deactivate the GPS
     bool powerState;            // Power state of the GPS
@@ -119,7 +115,7 @@ public:
      * PUBLIC METHODS
      *****************/
 
-    WiGPS(int);
+    WiGPS(HardwareSerial& serial);
     void init(int);
 
     int on(void);                   // Powers on the GPS module
