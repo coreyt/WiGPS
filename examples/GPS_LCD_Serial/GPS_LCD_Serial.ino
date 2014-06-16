@@ -18,7 +18,7 @@
  * Power ON/OFF to pin 22
  ***************/
 #include <WiGPS.h>
-WiGPS gps(22);
+WiGPS gps(Serial1);
 
 /*
  * LCD RS pin to digital pin 23
@@ -60,7 +60,7 @@ void loop() {
   // newline between updates
   Serial.print("\n");
 
-  gps.update(3);
+  gps.update(3); // attempt update for 3 seconds
 
   if (gps.isReady() == true) {
     // Serial
